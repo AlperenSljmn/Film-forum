@@ -114,7 +114,8 @@ def create_topic():
 
 # Uygulama başlatıldığında veritabanını oluştur
 if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
     with app.app_context():
         db.create_all()
 
-    app.run(debug=True)
+    
