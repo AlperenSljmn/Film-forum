@@ -1,11 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
-
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
+
+# PostgreSQL bağlantı URL'si doğrudan koda ekleniyor
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://users_db_jxwb_user:3VOng2qo5fW5RK92EAs3sLUsNQY9UeXY@dpg-ctcufpbtq21c7380sbd0-a/users_db_jxwb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -35,10 +35,6 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     topic_id = db.Column(db.Integer, db.ForeignKey('topic.id'), nullable=False)
 
-@app.route("/")
-def home():
-    return render_template("login.html")
-
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
@@ -67,43 +63,26 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id  # Kullanıcı oturum bilgisi
-            session['username'] = user.username  # Kullanıcı adını kaydet
+            session['user_id'] = user.id
+            session['username'] = user.username
             return redirect(url_for('dashboard'))
         else:
-            return render_template("login.html", error="Giriş başarısız, tekrar deneyin.")
-    return render_template("login.html")
+            flash("Giriş başarısız, tekrar deneyin.", "error")
+            return redirect(url_for('login'))
 
-@app.route("/logout")
-def logout():
-    session.clear()  # Oturumu temizle
-    return redirect(url_for('login'))
+    return render_template("login.html")
 
 @app.route("/dashboard")
 def dashboard():
     topics = Topic.query.all()
     return render_template("dashboard.html", topics=topics)
 
-@app.route("/topic/<int:topic_id>", methods=["GET", "POST"])
-def topic(topic_id):
-    topic = Topic.query.get_or_404(topic_id)
-    if request.method == "POST":
-        content = request.form['comment']
-        user_id = session.get('user_id')  # Giriş yapan kullanıcı ID'si
-        comment = Comment(content=content, user_id=user_id, topic_id=topic_id)
-        db.session.add(comment)
-        db.session.commit()
-        return redirect(url_for('topic', topic_id=topic_id))
-
-    comments = Comment.query.filter_by(topic_id=topic_id).all()
-    return render_template("topic.html", topic=topic, comments=comments)
-
 @app.route("/create_topic", methods=["GET", "POST"])
 def create_topic():
     if request.method == "POST":
         title = request.form['title']
         content = request.form['content']
-        user_id = session.get('user_id')  # Oturumdan kullanıcı ID'sini al
+        user_id = session.get('user_id')
 
         if user_id:
             new_topic = Topic(title=title, content=content, user_id=user_id)
@@ -112,9 +91,11 @@ def create_topic():
             return redirect(url_for('dashboard'))
         else:
             return "Lütfen önce giriş yapın.", 403
+
     return render_template("create_topic.html")
 
-# Uygulama başlatıldığında veritabanını oluştur
+
+
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
