@@ -1,11 +1,11 @@
-
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
-
 app = Flask(__name__)
+
+# PostgreSQL bağlantı URL'si doğrudan burada
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://users_db_jxwb_user:3VOng2qo5fW5RK92EAs3sLUsNQY9UeXY@dpg-ctcufpbtq21c7380sbd0-a/users_db_jxwb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
@@ -117,12 +117,4 @@ def create_topic():
 
 # Uygulama başlatıldığında veritabanını oluştur
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-    app.run(debug=True)
-    
-
-    
-
-    
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
