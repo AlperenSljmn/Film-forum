@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ana Sayfa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <h1>Konu Başlıkları</h1>
+        <ul>
+            {% for topic in topics %}
+            <li>
+                <a href="/topic/{{ topic.id }}">{{ topic.title }}</a>
+                <small>({{ topic.user.username }} tarafından açıldı)</small>
+            </li>
+            {% endfor %}
+        </ul>
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/create_topic" class="btn-link">Yeni Konu Aç</a>
+        </div>
+    </div>
+    
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yeni Konu Aç</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="create-topic-container">
+        <h1>Yeni Konu Aç</h1> <!-- topic.title yerine sabit bir başlık kullanabilirsiniz -->
+        <form action="/create_topic" method="POST">
+            <input type="text" name="title" placeholder="Konu Başlığı" required>
+            <textarea name="content" placeholder="Konu İçeriği" required></textarea>
+            <button type="submit">Konu Aç</button>
+        </form>
+    </div>
+</body>
+</html>
