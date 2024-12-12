@@ -1,16 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-import os
+import psycopg2
 
 app = Flask(__name__)
-
-# PostgreSQL bağlantı URL'si doğrudan burada
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://users_db_jxwb_user:3VOng2qo5fW5RK92EAs3sLUsNQY9UeXY@dpg-ctcufpbtq21c7380sbd0-a/users_db_jxwb'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://users_db_jxwb_user:3VOng2qo5fW5RK92EAs3sLUsNQY9UeXY@dpg-ctcufpbtq21c7380sbd0-a.oregon-postgres.render.com/users_db_jxwb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
-
 app.secret_key = 'flask_secret_key_123'
+
+db = SQLAlchemy(app)
 
 # Kullanıcı Modeli
 class User(db.Model):
@@ -38,7 +36,7 @@ class Comment(db.Model):
 
 @app.route("/")
 def home():
-    return render_template("login.html")
+    return redirect(url_for('login'))
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -68,16 +66,19 @@ def login():
         user = User.query.filter_by(email=email).first()
 
         if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id  # Kullanıcı oturum bilgisi
-            session['username'] = user.username  # Kullanıcı adını kaydet
+            session['user_id'] = user.id
+            session['username'] = user.username
             return redirect(url_for('dashboard'))
         else:
-            return render_template("login.html", error="Giriş başarısız, tekrar deneyin.")
+            flash("Giriş başarısız, tekrar deneyin.", "error")
+            return redirect(url_for('login'))
+
     return render_template("login.html")
 
 @app.route("/logout")
 def logout():
-    session.clear()  # Oturumu temizle
+    session.clear()
+    flash("Başarıyla çıkış yaptınız.", "success")
     return redirect(url_for('login'))
 
 @app.route("/dashboard")
@@ -90,10 +91,14 @@ def topic(topic_id):
     topic = Topic.query.get_or_404(topic_id)
     if request.method == "POST":
         content = request.form['comment']
-        user_id = session.get('user_id')  # Giriş yapan kullanıcı ID'si
-        comment = Comment(content=content, user_id=user_id, topic_id=topic_id)
-        db.session.add(comment)
-        db.session.commit()
+        user_id = session.get('user_id')
+        if user_id:
+            comment = Comment(content=content, user_id=user_id, topic_id=topic_id)
+            db.session.add(comment)
+            db.session.commit()
+            flash("Yorum başarıyla eklendi.", "success")
+        else:
+            flash("Yorum eklemek için giriş yapmanız gerekiyor.", "error")
         return redirect(url_for('topic', topic_id=topic_id))
 
     comments = Comment.query.filter_by(topic_id=topic_id).all()
@@ -104,17 +109,21 @@ def create_topic():
     if request.method == "POST":
         title = request.form['title']
         content = request.form['content']
-        user_id = session.get('user_id')  # Oturumdan kullanıcı ID'sini al
+        user_id = session.get('user_id')
 
         if user_id:
             new_topic = Topic(title=title, content=content, user_id=user_id)
             db.session.add(new_topic)
             db.session.commit()
+            flash("Konu başarıyla oluşturuldu.", "success")
             return redirect(url_for('dashboard'))
         else:
-            return "Lütfen önce giriş yapın.", 403
+            flash("Konu oluşturmak için giriş yapmanız gerekiyor.", "error")
+            return redirect(url_for('login'))
+
     return render_template("create_topic.html")
 
-# Uygulama başlatıldığında veritabanını oluştur
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True)
