@@ -16,6 +16,19 @@
                 <small>({{ topic.user.username }} tarafından açıldı)</small>
             </li>
             {% endfor %}
+            {% for topic in topics %}
+    <div class="topic">
+        <h3>{{ topic.title }}</h3>
+        <p>{{ topic.content }}</p>
+        <p>Yazar: {{ topic.user.username }}</p>
+        {% if session.get('user_id') == topic.user_id or session.get('email') == ADMIN_EMAIL %}
+            <form action="{{ url_for('delete_topic', topic_id=topic.id) }}" method="post" style="display:inline;">
+                <button type="submit" class="btn btn-danger">Sil</button>
+            </form>
+        {% endif %}
+    </div>
+{% endfor %}
+
         </ul>
         <div style="text-align: center; margin-top: 20px;">
             <a href="/create_topic" class="btn-link">Yeni Konu Aç</a>
