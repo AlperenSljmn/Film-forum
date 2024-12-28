@@ -10,6 +10,8 @@ app.secret_key = 'flask_secret_key_123'
 
 db = SQLAlchemy(app)
 
+ADMIN_EMAIL = "alperensulejman45@gmail.com"
+
 # Kullanıcı Modeli
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -68,6 +70,7 @@ def login():
         if user and check_password_hash(user.password, password):
             session['user_id'] = user.id
             session['username'] = user.username
+            session['email'] = user.email
             return redirect(url_for('dashboard'))
         else:
             flash("Giriş başarısız, tekrar deneyin.", "error")
@@ -122,6 +125,30 @@ def create_topic():
             return redirect(url_for('login'))
 
     return render_template("create_topic.html")
+
+@app.route("/delete_topic/<int:topic_id>", methods=["POST"])
+def delete_topic(topic_id):
+    topic = Topic.query.get_or_404(topic_id)
+    user_email = session.get('email')
+    if session.get('user_id') == topic.user_id or user_email == ADMIN_EMAIL:
+        db.session.delete(topic)
+        db.session.commit()
+        flash("Konu başarıyla silindi.", "success")
+    else:
+        flash("Bu konuyu silme yetkiniz yok.", "error")
+    return redirect(url_for('dashboard'))
+
+@app.route("/delete_comment/<int:comment_id>", methods=["POST"])
+def delete_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    user_email = session.get('email')
+    if session.get('user_id') == comment.user_id or user_email == ADMIN_EMAIL:
+        db.session.delete(comment)
+        db.session.commit()
+        flash("Yorum başarıyla silindi.", "success")
+    else:
+        flash("Bu yorumu silme yetkiniz yok.", "error")
+    return redirect(url_for('dashboard'))
 
 if __name__ == "__main__":
     with app.app_context():
